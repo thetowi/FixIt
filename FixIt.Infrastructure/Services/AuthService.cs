@@ -10,23 +10,23 @@ namespace FixIt.Infrastructure.Services;
 public class AuthService : IAuthService
 {
     private readonly FixItDbContext _db;
+    private readonly IJwtService _jwtService;
     private readonly PasswordHasher<Usuario> _passwordHasher = new();
 
-    public AuthService(FixItDbContext db)
+    public AuthService(FixItDbContext db, IJwtService jwtService)
     {
         _db = db;
+        _jwtService = jwtService;
     }
 
     public async Task<UsuarioResponse> RegistrarAsync(RegistroRequest request)
     {
-        // Validar que el email no exista ya
         var existe = await _db.Usuarios.AnyAsync(u => u.Email == request.Email);
         if (existe)
         {
             throw new InvalidOperationException("Ya existe una cuenta con ese email.");
         }
 
-        // Validar que el rol sea válido (Admin no se crea por registro público)
         if (!Enum.TryParse<RolUsuario>(request.Rol, ignoreCase: true, out var rol) || rol == RolUsuario.Admin)
         {
             throw new InvalidOperationException("Rol inválido. Debe ser 'cliente' o 'prestador'.");
@@ -42,7 +42,6 @@ public class AuthService : IAuthService
             Rol = rol
         };
 
-        // Hasheamos la contraseña ANTES de guardarla
         usuario.PasswordHash = _passwordHasher.HashPassword(usuario, request.Password);
 
         _db.Usuarios.Add(usuario);
@@ -55,6 +54,40 @@ public class AuthService : IAuthService
             Nombre = usuario.Nombre,
             Apellido = usuario.Apellido,
             Rol = usuario.Rol.ToString()
+        };
+    }
+
+    public async Task<LoginResponse> LoginAsync(LoginRequest request)
+    {
+        var usuario = await _db.Usuarios.FirstOrDefaultAsync(u => u.Email == request.Email);
+
+        if (usuario is null)
+        {
+            throw new InvalidOperationException("Email o contraseña incorrectos.");
+        }
+
+        var resultado = _passwordHasher.VerifyHashedPassword(usuario, usuario.PasswordHash, request.Password);
+
+        if (resultado == PasswordVerificationResult.Failed)
+        {
+            // Mensaje idéntico al de "usuario no existe" a propósito:
+            // así no le damos pistas a un atacante de si el email existe o no
+            throw new InvalidOperationException("Email o contraseña incorrectos.");
+        }
+
+        var token = _jwtService.GenerarToken(usuario);
+
+        return new LoginResponse
+        {
+            Token = token,
+            Usuario = new UsuarioResponse
+            {
+                Id = usuario.Id,
+                Email = usuario.Email,
+                Nombre = usuario.Nombre,
+                Apellido = usuario.Apellido,
+                Rol = usuario.Rol.ToString()
+            }
         };
     }
 }

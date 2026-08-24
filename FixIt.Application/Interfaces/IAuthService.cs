@@ -5,4 +5,5 @@ namespace FixIt.Application.Interfaces;
 public interface IAuthService
 {
     Task<UsuarioResponse> RegistrarAsync(RegistroRequest request);
+    Task<LoginResponse> LoginAsync(LoginRequest request);
 }
