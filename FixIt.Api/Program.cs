@@ -1,5 +1,7 @@
 using FixIt.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using FixIt.Infrastructure.Services;
+using FixIt.Application.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // ---- Nuestra configuración ----
 builder.Services.AddDbContext<FixItDbContext>(options =>
