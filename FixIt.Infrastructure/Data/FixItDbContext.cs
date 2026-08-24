@@ -25,7 +25,7 @@ public class FixItDbContext : DbContext
             entity.HasIndex(u => u.Email).IsUnique();
             entity.HasIndex(u => u.Rol);
             entity.HasIndex(u => u.UbicacionGeo).HasMethod("GIST"); // índice espacial para búsquedas por radio
-
+            entity.Property(u => u.UbicacionGeo).HasColumnType("geography (point)");
             entity.Property(u => u.Rol)
                 .HasConversion<string>() // guarda el enum como texto legible en la DB, no como número
                 .HasMaxLength(20);
