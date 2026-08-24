@@ -1,0 +1,38 @@
+using NetTopologySuite.Geometries;
+
+namespace FixIt.Domain.Entities;
+
+public enum RolUsuario
+{
+    Cliente,
+    Prestador,
+    Admin
+}
+
+public class Usuario
+{
+    public Guid Id { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string PasswordHash { get; set; } = string.Empty;
+    public string Nombre { get; set; } = string.Empty;
+    public string Apellido { get; set; } = string.Empty;
+    public string Telefono { get; set; } = string.Empty;
+    public RolUsuario Rol { get; set; }
+
+    public string? DniNumero { get; set; }
+    public string? DniFotoUrl { get; set; }
+    public bool Verificado { get; set; } = false;
+
+    public double? Latitud { get; set; }
+    public double? Longitud { get; set; }
+    public Point? UbicacionGeo { get; set; }
+
+    public string? FotoPerfilUrl { get; set; }
+    public DateTimeOffset CreadoEn { get; set; } = DateTimeOffset.UtcNow;
+
+    // Navegación
+    public ICollection<PrestadorCategoria> PrestadorCategorias { get; set; } = new List<PrestadorCategoria>();
+    public ICollection<Orden> OrdenesComoCliente { get; set; } = new List<Orden>();
+    public ICollection<Orden> OrdenesComoPrestador { get; set; } = new List<Orden>();
+    public ICollection<Mensaje> Mensajes { get; set; } = new List<Mensaje>();
+}
