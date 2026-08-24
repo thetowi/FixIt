@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using FixIt.Application.DTOs.Auth;
 using FixIt.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FixIt.Api.Controllers;
@@ -41,5 +43,21 @@ public class AuthController : ControllerBase
         {
             return Unauthorized(new { error = ex.Message });
         }
+    }
+
+    [HttpGet("me")]
+    [Authorize] // <- esta línea es la que exige un JWT válido para entrar acá
+    public IActionResult Me()
+    {
+        var id = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        var email = User.FindFirstValue(ClaimTypes.Email);
+        var rol = User.FindFirstValue(ClaimTypes.Role);
+
+        return Ok(new
+        {
+            id,
+            email,
+            rol
+        });
     }
 }
