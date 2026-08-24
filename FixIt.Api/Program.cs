@@ -45,6 +45,7 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IBusquedaService, BusquedaService>();
+builder.Services.AddScoped<IPrestadorPerfilService, PrestadorPerfilService>();
 
 // ---- Autenticación JWT ----
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -9,10 +9,12 @@ namespace FixIt.Api.Controllers;
 public class PrestadoresController : ControllerBase
 {
     private readonly IBusquedaService _busquedaService;
+    private readonly IPrestadorPerfilService _perfilService;
 
-    public PrestadoresController(IBusquedaService busquedaService)
+    public PrestadoresController(IBusquedaService busquedaService, IPrestadorPerfilService perfilService)
     {
         _busquedaService = busquedaService;
+        _perfilService = perfilService;
     }
 
     [HttpGet("buscar")]
@@ -32,5 +34,16 @@ public class PrestadoresController : ControllerBase
 
         var resultado = await _busquedaService.BuscarPrestadoresAsync(request);
         return Ok(resultado);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> ObtenerPerfil(Guid id)
+    {
+        var perfil = await _perfilService.ObtenerPerfilAsync(id);
+        if (perfil is null)
+        {
+            return NotFound(new { error = "Prestador no encontrado." });
+        }
+        return Ok(perfil);
     }
 }
