@@ -43,6 +43,7 @@ builder.Services.AddDbContext<FixItDbContext>(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 
 // ---- Autenticación JWT ----
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
