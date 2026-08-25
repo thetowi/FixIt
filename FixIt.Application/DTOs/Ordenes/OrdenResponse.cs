@@ -11,4 +11,5 @@ public class OrdenResponse
     public decimal MontoTotal { get; set; }
     public decimal ComisionPlataforma { get; set; }
     public DateTimeOffset CreadoEn { get; set; }
+    public bool YaCalificada { get; set; }
 }

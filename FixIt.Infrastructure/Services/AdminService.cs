@@ -3,6 +3,7 @@ using FixIt.Application.Interfaces;
 using FixIt.Domain.Entities;
 using FixIt.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using FixIt.Application.DTOs.Ordenes;
 
 namespace FixIt.Infrastructure.Services;
 
@@ -86,6 +87,28 @@ public class AdminService : IAdminService
                 Rol = u.Rol.ToString(),
                 Verificado = u.Verificado,
                 CreadoEn = u.CreadoEn
+            })
+            .ToListAsync();
+    }
+        public async Task<List<OrdenResponse>> ListarTodasLasOrdenesAsync()
+    {
+        return await _db.Ordenes
+            .Include(o => o.Prestador)
+            .Include(o => o.Categoria)
+            .Include(o => o.Calificacion)
+            .OrderByDescending(o => o.CreadoEn)
+            .Select(o => new OrdenResponse
+            {
+                Id = o.Id,
+                PrestadorId = o.PrestadorId,
+                PrestadorNombreCompleto = o.Prestador.Nombre + " " + o.Prestador.Apellido,
+                CategoriaId = o.CategoriaId,
+                CategoriaNombre = o.Categoria.Nombre,
+                Estado = o.Estado.ToString(),
+                MontoTotal = o.MontoTotal,
+                ComisionPlataforma = o.ComisionPlataforma,
+                CreadoEn = o.CreadoEn,
+                YaCalificada = o.Calificacion != null
             })
             .ToListAsync();
     }

@@ -76,12 +76,13 @@ public class OrdenService : IOrdenService
         };
     }
 
-    public async Task<List<OrdenResponse>> ListarMisOrdenesAsync(Guid usuarioId)
+        public async Task<List<OrdenResponse>> ListarMisOrdenesAsync(Guid usuarioId)
     {
         return await _db.Ordenes
             .Where(o => o.ClienteId == usuarioId || o.PrestadorId == usuarioId)
             .Include(o => o.Prestador)
             .Include(o => o.Categoria)
+            .Include(o => o.Calificacion)
             .OrderByDescending(o => o.CreadoEn)
             .Select(o => new OrdenResponse
             {
@@ -93,7 +94,8 @@ public class OrdenService : IOrdenService
                 Estado = o.Estado.ToString(),
                 MontoTotal = o.MontoTotal,
                 ComisionPlataforma = o.ComisionPlataforma,
-                CreadoEn = o.CreadoEn
+                CreadoEn = o.CreadoEn,
+                YaCalificada = o.Calificacion != null
             })
             .ToListAsync();
     }

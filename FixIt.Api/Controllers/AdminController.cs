@@ -58,4 +58,10 @@ public class AdminController : ControllerBase
         var resultado = await _adminService.ListarUsuariosAsync();
         return Ok(resultado);
     }
+        [HttpGet("ordenes")]
+    public async Task<IActionResult> ListarOrdenes()
+    {
+        var resultado = await _adminService.ListarTodasLasOrdenesAsync();
+        return Ok(resultado);
+    }
 }
