@@ -41,6 +41,16 @@ public class PrestadoresController : ControllerBase
         return Ok(resultado);
     }
 
+    [HttpGet("destacados")]
+    public async Task<IActionResult> Destacados(
+        [FromQuery] double? latitud,
+        [FromQuery] double? longitud,
+        [FromQuery] int limite = 6)
+    {
+        var resultado = await _busquedaService.ObtenerDestacadosAsync(latitud, longitud, limite);
+        return Ok(resultado);
+    }
+
     [HttpGet("{id}")]
     public async Task<IActionResult> ObtenerPerfil(Guid id)
     {
