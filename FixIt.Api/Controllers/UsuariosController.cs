@@ -8,7 +8,7 @@ namespace FixIt.Api.Controllers;
 
 [ApiController]
 [Route("api/usuarios")]
-[Authorize] // cualquier usuario logueado, sin importar el rol
+[Authorize]
 public class UsuariosController : ControllerBase
 {
     private readonly IUsuarioService _usuarioService;
@@ -18,20 +18,49 @@ public class UsuariosController : ControllerBase
         _usuarioService = usuarioService;
     }
 
+    private Guid ObtenerUsuarioId()
+    {
+        var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        return Guid.Parse(idClaim!);
+    }
+
     [HttpPut("ubicacion")]
     public async Task<IActionResult> ActualizarUbicacion([FromBody] ActualizarUbicacionRequest request)
     {
-        var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        var usuarioId = Guid.Parse(idClaim!);
-
         try
         {
-            await _usuarioService.ActualizarUbicacionAsync(usuarioId, request);
+            await _usuarioService.ActualizarUbicacionAsync(ObtenerUsuarioId(), request);
             return NoContent();
         }
         catch (InvalidOperationException ex)
         {
             return NotFound(new { error = ex.Message });
+        }
+    }
+
+    [HttpPost("foto-perfil")]
+    public async Task<IActionResult> ActualizarFotoPerfil(IFormFile archivo)
+    {
+        if (archivo.Length == 0)
+        {
+            return BadRequest(new { error = "El archivo está vacío." });
+        }
+
+        const long maxBytes = 5 * 1024 * 1024; // 5 MB
+        if (archivo.Length > maxBytes)
+        {
+            return BadRequest(new { error = "La imagen no puede superar los 5 MB." });
+        }
+
+        try
+        {
+            using var stream = archivo.OpenReadStream();
+            var url = await _usuarioService.ActualizarFotoPerfilAsync(ObtenerUsuarioId(), stream, archivo.ContentType);
+            return Ok(new { fotoPerfilUrl = url });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
     }
 }
