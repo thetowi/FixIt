@@ -4,6 +4,7 @@ using FixIt.Application.DTOs.Ordenes;
 using FixIt.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using FixIt.Application.DTOs.Agenda;
 
 namespace FixIt.Api.Controllers;
 
@@ -14,11 +15,13 @@ public class OrdenesController : ControllerBase
 {
     private readonly IOrdenService _ordenService;
     private readonly ICalificacionService _calificacionService;
+    private readonly IAgendaService _agendaService;
 
-    public OrdenesController(IOrdenService ordenService, ICalificacionService calificacionService)
+    public OrdenesController(IOrdenService ordenService, ICalificacionService calificacionService, IAgendaService agendaService)
     {
         _ordenService = ordenService;
         _calificacionService = calificacionService;
+        _agendaService = agendaService;
     }
 
     private Guid ObtenerUsuarioId()
@@ -102,6 +105,20 @@ public class OrdenesController : ControllerBase
         {
             var resultado = await _calificacionService.CrearAsync(ObtenerUsuarioId(), id, request);
             return Ok(resultado);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+        [HttpPut("{id}/programar")]
+    [Authorize(Roles = "Prestador")]
+    public async Task<IActionResult> Programar(Guid id, [FromBody] ProgramarTurnoRequest request)
+    {
+        try
+        {
+            await _agendaService.ProgramarTurnoAsync(ObtenerUsuarioId(), id, request);
+            return NoContent();
         }
         catch (InvalidOperationException ex)
         {
