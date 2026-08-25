@@ -18,6 +18,8 @@ public class FixItDbContext : DbContext
     public DbSet<Mensaje> Mensajes => Set<Mensaje>();
     public DbSet<FotoTrabajo> FotosTrabajo => Set<FotoTrabajo>();
 
+    public DbSet<DisponibilidadPrestador> Disponibilidad => Set<DisponibilidadPrestador>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // ---- Usuario ----
@@ -131,6 +133,15 @@ public class FixItDbContext : DbContext
             entity.HasOne(f => f.Prestador)
                 .WithMany(u => u.FotosTrabajo)
                 .HasForeignKey(f => f.PrestadorId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<DisponibilidadPrestador>(entity =>
+        {
+            entity.HasIndex(d => d.PrestadorId);
+
+            entity.HasOne(d => d.Prestador)
+                .WithMany(u => u.Disponibilidad)
+                .HasForeignKey(d => d.PrestadorId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

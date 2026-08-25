@@ -38,4 +38,5 @@ public class Usuario
     public ICollection<Orden> OrdenesComoPrestador { get; set; } = new List<Orden>();
     public ICollection<FotoTrabajo> FotosTrabajo { get; set; } = new List<FotoTrabajo>();
     public ICollection<Mensaje> Mensajes { get; set; } = new List<Mensaje>();
+    public ICollection<DisponibilidadPrestador> Disponibilidad { get; set; } = new List<DisponibilidadPrestador>();
 }
