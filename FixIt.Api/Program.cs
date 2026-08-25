@@ -50,6 +50,7 @@ builder.Services.AddScoped<IPrestadorPerfilService, PrestadorPerfilService>();
 builder.Services.AddScoped<IOrdenService, OrdenService>();
 builder.Services.AddScoped<IMensajeService, MensajeService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<ICalificacionService, CalificacionService>();
 builder.Services.AddSignalR();
 
 

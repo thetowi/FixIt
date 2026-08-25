@@ -15,7 +15,7 @@ public class PrestadorPerfilService : IPrestadorPerfilService
         _db = db;
     }
 
-    public async Task<PerfilPrestadorResponse?> ObtenerPerfilAsync(Guid prestadorId)
+        public async Task<PerfilPrestadorResponse?> ObtenerPerfilAsync(Guid prestadorId)
     {
         var usuario = await _db.Usuarios
             .Where(u => u.Id == prestadorId && u.Rol == RolUsuario.Prestador)
@@ -25,6 +25,11 @@ public class PrestadorPerfilService : IPrestadorPerfilService
 
         if (usuario is null) return null;
 
+        var calificaciones = await _db.Calificaciones
+            .Where(c => c.Orden.PrestadorId == prestadorId)
+            .Select(c => (int)c.Puntuacion)
+            .ToListAsync();
+
         return new PerfilPrestadorResponse
         {
             Id = usuario.Id,
@@ -33,6 +38,8 @@ public class PrestadorPerfilService : IPrestadorPerfilService
             Verificado = usuario.Verificado,
             FotoPerfilUrl = usuario.FotoPerfilUrl,
             MiembroDesde = usuario.CreadoEn,
+            PromedioCalificacion = calificaciones.Count > 0 ? calificaciones.Average() : null,
+            CantidadCalificaciones = calificaciones.Count,
             Servicios = usuario.PrestadorCategorias.Select(pc => new ServicioOfrecidoResponse
             {
                 CategoriaId = pc.CategoriaId,
@@ -42,4 +49,5 @@ public class PrestadorPerfilService : IPrestadorPerfilService
             }).ToList()
         };
     }
+    
 }

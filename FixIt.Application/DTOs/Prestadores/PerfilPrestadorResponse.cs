@@ -8,6 +8,8 @@ public class PerfilPrestadorResponse
     public bool Verificado { get; set; }
     public string? FotoPerfilUrl { get; set; }
     public DateTimeOffset MiembroDesde { get; set; }
+    public double? PromedioCalificacion { get; set; }
+    public int CantidadCalificaciones { get; set; }
     public List<ServicioOfrecidoResponse> Servicios { get; set; } = new();
 }
 

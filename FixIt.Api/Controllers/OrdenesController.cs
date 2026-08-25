@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using FixIt.Application.DTOs.Calificaciones;
 using FixIt.Application.DTOs.Ordenes;
 using FixIt.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -12,10 +13,12 @@ namespace FixIt.Api.Controllers;
 public class OrdenesController : ControllerBase
 {
     private readonly IOrdenService _ordenService;
+    private readonly ICalificacionService _calificacionService;
 
-    public OrdenesController(IOrdenService ordenService)
+    public OrdenesController(IOrdenService ordenService, ICalificacionService calificacionService)
     {
         _ordenService = ordenService;
+        _calificacionService = calificacionService;
     }
 
     private Guid ObtenerUsuarioId()
@@ -44,5 +47,65 @@ public class OrdenesController : ControllerBase
     {
         var resultado = await _ordenService.ListarMisOrdenesAsync(ObtenerUsuarioId());
         return Ok(resultado);
+    }
+
+    [HttpPut("{id}/marcar-pagada")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> MarcarComoPagada(Guid id)
+    {
+        try
+        {
+            await _ordenService.MarcarComoPagadaAsync(id);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpPut("{id}/iniciar")]
+    [Authorize(Roles = "Prestador")]
+    public async Task<IActionResult> Iniciar(Guid id)
+    {
+        try
+        {
+            await _ordenService.IniciarAsync(ObtenerUsuarioId(), id);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpPut("{id}/completar")]
+    [Authorize(Roles = "Cliente")]
+    public async Task<IActionResult> Completar(Guid id)
+    {
+        try
+        {
+            await _ordenService.CompletarAsync(ObtenerUsuarioId(), id);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpPost("{id}/calificacion")]
+    [Authorize(Roles = "Cliente")]
+    public async Task<IActionResult> Calificar(Guid id, [FromBody] CrearCalificacionRequest request)
+    {
+        try
+        {
+            var resultado = await _calificacionService.CrearAsync(ObtenerUsuarioId(), id, request);
+            return Ok(resultado);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 }

@@ -10,11 +10,16 @@ public class PrestadoresController : ControllerBase
 {
     private readonly IBusquedaService _busquedaService;
     private readonly IPrestadorPerfilService _perfilService;
+    private readonly ICalificacionService _calificacionService;
 
-    public PrestadoresController(IBusquedaService busquedaService, IPrestadorPerfilService perfilService)
+    public PrestadoresController(
+        IBusquedaService busquedaService,
+        IPrestadorPerfilService perfilService,
+        ICalificacionService calificacionService)
     {
         _busquedaService = busquedaService;
         _perfilService = perfilService;
+        _calificacionService = calificacionService;
     }
 
     [HttpGet("buscar")]
@@ -45,5 +50,12 @@ public class PrestadoresController : ControllerBase
             return NotFound(new { error = "Prestador no encontrado." });
         }
         return Ok(perfil);
+    }
+
+    [HttpGet("{id}/calificaciones")]
+    public async Task<IActionResult> ObtenerCalificaciones(Guid id)
+    {
+        var resultado = await _calificacionService.ListarPorPrestadorAsync(id);
+        return Ok(resultado);
     }
 }
