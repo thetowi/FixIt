@@ -24,6 +24,34 @@ public class UsuariosController : ControllerBase
         return Guid.Parse(idClaim!);
     }
 
+    [HttpGet("perfil")]
+    public async Task<IActionResult> ObtenerPerfil()
+    {
+        try
+        {
+            var resultado = await _usuarioService.ObtenerPerfilPropioAsync(ObtenerUsuarioId());
+            return Ok(resultado);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    [HttpPut("perfil")]
+    public async Task<IActionResult> ActualizarPerfil([FromBody] ActualizarPerfilRequest request)
+    {
+        try
+        {
+            var resultado = await _usuarioService.ActualizarPerfilAsync(ObtenerUsuarioId(), request);
+            return Ok(resultado);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     [HttpPut("ubicacion")]
     public async Task<IActionResult> ActualizarUbicacion([FromBody] ActualizarUbicacionRequest request)
     {
@@ -46,7 +74,7 @@ public class UsuariosController : ControllerBase
             return BadRequest(new { error = "El archivo está vacío." });
         }
 
-        const long maxBytes = 5 * 1024 * 1024; // 5 MB
+        const long maxBytes = 5 * 1024 * 1024;
         if (archivo.Length > maxBytes)
         {
             return BadRequest(new { error = "La imagen no puede superar los 5 MB." });

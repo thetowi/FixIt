@@ -3,6 +3,7 @@ using FixIt.Application.Interfaces;
 using FixIt.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
+using FixIt.Domain.Entities;
 
 namespace FixIt.Infrastructure.Services;
 
@@ -60,5 +61,52 @@ public class UsuarioService : IUsuarioService
         await _db.SaveChangesAsync();
 
         return usuario.FotoPerfilUrl;
+    }
+        public async Task<PerfilPropioResponse> ObtenerPerfilPropioAsync(Guid usuarioId)
+    {
+        var usuario = await _db.Usuarios.FindAsync(usuarioId);
+        if (usuario is null)
+        {
+            throw new InvalidOperationException("Usuario no encontrado.");
+        }
+
+        return MapearAPerfilPropio(usuario);
+    }
+
+    public async Task<PerfilPropioResponse> ActualizarPerfilAsync(Guid usuarioId, ActualizarPerfilRequest request)
+    {
+        var usuario = await _db.Usuarios.FindAsync(usuarioId);
+        if (usuario is null)
+        {
+            throw new InvalidOperationException("Usuario no encontrado.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Nombre) || string.IsNullOrWhiteSpace(request.Apellido))
+        {
+            throw new InvalidOperationException("Nombre y apellido son obligatorios.");
+        }
+
+        usuario.Nombre = request.Nombre;
+        usuario.Apellido = request.Apellido;
+        usuario.Telefono = request.Telefono;
+
+        await _db.SaveChangesAsync();
+
+        return MapearAPerfilPropio(usuario);
+    }
+
+    private static PerfilPropioResponse MapearAPerfilPropio(Usuario usuario)
+    {
+        return new PerfilPropioResponse
+        {
+            Id = usuario.Id,
+            Email = usuario.Email,
+            Nombre = usuario.Nombre,
+            Apellido = usuario.Apellido,
+            Telefono = usuario.Telefono,
+            Rol = usuario.Rol.ToString(),
+            FotoPerfilUrl = usuario.FotoPerfilUrl,
+            Verificado = usuario.Verificado
+        };
     }
 }
