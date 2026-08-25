@@ -45,19 +45,42 @@ public class AuthController : ControllerBase
         }
     }
 
+    [HttpPost("google")]
+    public async Task<IActionResult> LoginGoogle([FromBody] LoginGoogleRequest request)
+    {
+        try
+        {
+            var resultado = await _authService.LoginConGoogleAsync(request);
+            return Ok(resultado);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Unauthorized(new { error = ex.Message });
+        }
+    }
+
+    [HttpPost("google/completar")]
+    public async Task<IActionResult> CompletarRegistroGoogle([FromBody] CompletarRegistroGoogleRequest request)
+    {
+        try
+        {
+            var resultado = await _authService.CompletarRegistroGoogleAsync(request);
+            return Ok(resultado);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     [HttpGet("me")]
-    [Authorize] // <- esta línea es la que exige un JWT válido para entrar acá
+    [Authorize]
     public IActionResult Me()
     {
         var id = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
         var email = User.FindFirstValue(ClaimTypes.Email);
         var rol = User.FindFirstValue(ClaimTypes.Role);
 
-        return Ok(new
-        {
-            id,
-            email,
-            rol
-        });
+        return Ok(new { id, email, rol });
     }
 }
