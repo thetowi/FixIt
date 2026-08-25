@@ -3,6 +3,7 @@ using FixIt.Application.DTOs.Categorias;
 using FixIt.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using FixIt.Application.DTOs.Prestadores;
 
 namespace FixIt.Api.Controllers;
 
@@ -11,11 +12,15 @@ namespace FixIt.Api.Controllers;
 [Authorize(Roles = "Prestador")]
 public class PrestadorController : ControllerBase
 {
-    private readonly ICategoriaService _categoriaService;
 
-    public PrestadorController(ICategoriaService categoriaService)
+    private readonly ICategoriaService _categoriaService;
+    private readonly IPrestadorPerfilService _perfilService;
+
+    
+    public PrestadorController(ICategoriaService categoriaService, IPrestadorPerfilService perfilService)
     {
         _categoriaService = categoriaService;
+        _perfilService = perfilService;
     }
 
     private Guid ObtenerPrestadorId()
@@ -51,6 +56,59 @@ public class PrestadorController : ControllerBase
         try
         {
             await _categoriaService.QuitarAsync(ObtenerPrestadorId(), id);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+        [HttpPut("acerca-de-mi")]
+    public async Task<IActionResult> ActualizarAcercaDeMi([FromBody] ActualizarAcercaDeMiRequest request)
+    {
+        try
+        {
+            await _perfilService.ActualizarAcercaDeMiAsync(ObtenerPrestadorId(), request);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpPost("fotos-trabajo")]
+    public async Task<IActionResult> AgregarFotoTrabajo(IFormFile archivo, [FromForm] string? descripcion)
+    {
+        if (archivo.Length == 0)
+        {
+            return BadRequest(new { error = "El archivo está vacío." });
+        }
+
+        const long maxBytes = 5 * 1024 * 1024;
+        if (archivo.Length > maxBytes)
+        {
+            return BadRequest(new { error = "La imagen no puede superar los 5 MB." });
+        }
+
+        try
+        {
+            using var stream = archivo.OpenReadStream();
+            var resultado = await _perfilService.AgregarFotoTrabajoAsync(ObtenerPrestadorId(), stream, archivo.ContentType, descripcion);
+            return Ok(resultado);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpDelete("fotos-trabajo/{id}")]
+    public async Task<IActionResult> EliminarFotoTrabajo(Guid id)
+    {
+        try
+        {
+            await _perfilService.EliminarFotoTrabajoAsync(ObtenerPrestadorId(), id);
             return NoContent();
         }
         catch (InvalidOperationException ex)

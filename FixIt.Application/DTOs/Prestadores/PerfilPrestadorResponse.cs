@@ -5,6 +5,9 @@ public class PerfilPrestadorResponse
     public Guid Id { get; set; }
     public string Nombre { get; set; } = string.Empty;
     public string Apellido { get; set; } = string.Empty;
+    public string? Biografia { get; set; }
+    public int? RadioAlcanceKm { get; set; }
+    public List<FotoTrabajoResponse> FotosTrabajo { get; set; } = new();
     public bool Verificado { get; set; }
     public string? FotoPerfilUrl { get; set; }
     public DateTimeOffset MiembroDesde { get; set; }

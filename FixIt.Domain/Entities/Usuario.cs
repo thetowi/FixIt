@@ -28,11 +28,14 @@ public class Usuario
     public Point? UbicacionGeo { get; set; }
 
     public string? FotoPerfilUrl { get; set; }
+    public string? Biografia { get; set; }
+    public int? RadioAlcanceKm { get; set; }
     public DateTimeOffset CreadoEn { get; set; } = DateTimeOffset.UtcNow;
 
     // Navegación
     public ICollection<PrestadorCategoria> PrestadorCategorias { get; set; } = new List<PrestadorCategoria>();
     public ICollection<Orden> OrdenesComoCliente { get; set; } = new List<Orden>();
     public ICollection<Orden> OrdenesComoPrestador { get; set; } = new List<Orden>();
+    public ICollection<FotoTrabajo> FotosTrabajo { get; set; } = new List<FotoTrabajo>();
     public ICollection<Mensaje> Mensajes { get; set; } = new List<Mensaje>();
 }
