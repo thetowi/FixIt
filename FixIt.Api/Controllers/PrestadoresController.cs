@@ -25,9 +25,9 @@ public class PrestadoresController : ControllerBase
     [HttpGet("buscar")]
     public async Task<IActionResult> Buscar(
         [FromQuery] int categoriaId,
-        [FromQuery] double latitud,
-        [FromQuery] double longitud,
-        [FromQuery] double radioKm = 10)
+        [FromQuery] double? latitud,
+        [FromQuery] double? longitud,
+        [FromQuery] double? radioKm)
     {
         var request = new BuscarPrestadoresRequest
         {

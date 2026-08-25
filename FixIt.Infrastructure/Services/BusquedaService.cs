@@ -18,32 +18,78 @@ public class BusquedaService : IBusquedaService
         _db = db;
     }
 
-    public async Task<List<PrestadorEncontradoResponse>> BuscarPrestadoresAsync(BuscarPrestadoresRequest request)
+        public async Task<List<PrestadorEncontradoResponse>> BuscarPrestadoresAsync(BuscarPrestadoresRequest request)
     {
-        var puntoBusqueda = _geometryFactory.CreatePoint(
-            new Coordinate(request.Longitud, request.Latitud));
+        var query = _db.PrestadorCategorias.Where(pc => pc.CategoriaId == request.CategoriaId);
 
-        var radioMetros = request.RadioKm * 1000;
+        Point? punto = null;
+        if (request.Latitud.HasValue && request.Longitud.HasValue)
+        {
+            punto = _geometryFactory.CreatePoint(new Coordinate(request.Longitud.Value, request.Latitud.Value));
+            var radioMetros = (request.RadioKm ?? 10) * 1000;
+            query = query.Where(pc =>
+                pc.Prestador.UbicacionGeo != null &&
+                pc.Prestador.UbicacionGeo.IsWithinDistance(punto, radioMetros));
+        }
 
-        var resultado = await _db.PrestadorCategorias
-            .Where(pc => pc.CategoriaId == request.CategoriaId)
-            .Where(pc => pc.Prestador.UbicacionGeo != null &&
-                         pc.Prestador.UbicacionGeo.IsWithinDistance(puntoBusqueda, radioMetros))
-            .Select(pc => new PrestadorEncontradoResponse
-            {
-                Id = pc.Prestador.Id,
-                Nombre = pc.Prestador.Nombre,
-                Apellido = pc.Prestador.Apellido,
-                Verificado = pc.Prestador.Verificado,
-                FotoPerfilUrl = pc.Prestador.FotoPerfilUrl,
-                Descripcion = pc.Descripcion,
-                PrecioReferencia = pc.PrecioReferencia,
-                DistanciaKm = pc.Prestador.UbicacionGeo!.Distance(puntoBusqueda) / 1000
-            })
-            .OrderBy(r => r.DistanciaKm)
+        var baseData = punto is null
+            ? await query.Select(pc => new
+                {
+                    pc.Prestador.Id,
+                    pc.Prestador.Nombre,
+                    pc.Prestador.Apellido,
+                    pc.Prestador.Verificado,
+                    pc.Prestador.FotoPerfilUrl,
+                    pc.Descripcion,
+                    pc.PrecioReferencia,
+                    Distancia = (double?)null
+                }).ToListAsync()
+            : await query.Select(pc => new
+                {
+                    pc.Prestador.Id,
+                    pc.Prestador.Nombre,
+                    pc.Prestador.Apellido,
+                    pc.Prestador.Verificado,
+                    pc.Prestador.FotoPerfilUrl,
+                    pc.Descripcion,
+                    pc.PrecioReferencia,
+                    Distancia = (double?)(pc.Prestador.UbicacionGeo!.Distance(punto) / 1000)
+                }).ToListAsync();
+
+        var ids = baseData.Select(p => p.Id).ToList();
+
+        var calificaciones = await _db.Calificaciones
+            .Where(c => ids.Contains(c.Orden.PrestadorId))
+            .Select(c => new { PrestadorId = c.Orden.PrestadorId, c.Puntuacion })
             .ToListAsync();
 
-        return resultado;
+        var promedios = calificaciones
+            .GroupBy(c => c.PrestadorId)
+            .ToDictionary(g => g.Key, g => (Promedio: g.Average(x => (double)x.Puntuacion), Cantidad: g.Count()));
+
+        var resultado = baseData.Select(p =>
+        {
+            promedios.TryGetValue(p.Id, out var stats);
+            return new PrestadorEncontradoResponse
+            {
+                Id = p.Id,
+                Nombre = p.Nombre,
+                Apellido = p.Apellido,
+                Verificado = p.Verificado,
+                FotoPerfilUrl = p.FotoPerfilUrl,
+                Descripcion = p.Descripcion,
+                PrecioReferencia = p.PrecioReferencia,
+                DistanciaKm = p.Distancia,
+                PromedioCalificacion = stats.Cantidad > 0 ? stats.Promedio : null,
+                CantidadCalificaciones = stats.Cantidad
+            };
+        });
+
+        var ordenado = punto is not null
+            ? resultado.OrderBy(r => r.DistanciaKm)
+            : resultado.OrderByDescending(r => r.PromedioCalificacion ?? -1).ThenByDescending(r => r.CantidadCalificaciones);
+
+        return ordenado.ToList();
     }
         public async Task<List<PrestadorDestacadoResponse>> ObtenerDestacadosAsync(double? latitud, double? longitud, int limite = 6)
     {

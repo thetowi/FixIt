@@ -9,5 +9,7 @@ public class PrestadorEncontradoResponse
     public string? FotoPerfilUrl { get; set; }
     public string? Descripcion { get; set; }
     public decimal? PrecioReferencia { get; set; }
-    public double DistanciaKm { get; set; }
+    public double? DistanciaKm { get; set; }
+    public double? PromedioCalificacion { get; set; }
+    public int CantidadCalificaciones { get; set; }
 }
