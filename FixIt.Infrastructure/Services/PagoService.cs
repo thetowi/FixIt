@@ -77,4 +77,36 @@ public class PagoService : IPagoService
     {
         return !string.IsNullOrWhiteSpace(url) && Uri.TryCreate(url, UriKind.Absolute, out _);
     }
+        public async Task ProcesarWebhookAsync(string paymentId)
+    {
+        var paymentClient = new MercadoPago.Client.Payment.PaymentClient();
+        var payment = await paymentClient.GetAsync(long.Parse(paymentId));
+
+        // external_reference es el Id de nuestra Orden, que guardamos al crear la preferencia
+        if (payment.ExternalReference is null || !Guid.TryParse(payment.ExternalReference, out var ordenId))
+        {
+            return; // no es un pago que nosotros generamos, o algo raro pasó; lo ignoramos sin romper
+        }
+
+        if (payment.Status == "approved")
+        {
+            var orden = await _db.Ordenes.FindAsync(ordenId);
+            if (orden is not null && orden.Estado == EstadoOrden.PendientePago)
+            {
+                orden.Estado = EstadoOrden.Pagado;
+
+                var pago = new Pago
+                {
+                    Id = Guid.NewGuid(),
+                    OrdenId = orden.Id,
+                    MercadoPagoPaymentId = paymentId,
+                    Estado = EstadoPago.Retenido,
+                    Monto = orden.MontoTotal
+                };
+
+                _db.Pagos.Add(pago);
+                await _db.SaveChangesAsync();
+            }
+        }
+    }
 }
