@@ -5,6 +5,7 @@ using FixIt.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using FixIt.Application.DTOs.Agenda;
+using FixIt.Application.DTOs.Pagos;
 
 namespace FixIt.Api.Controllers;
 
@@ -16,12 +17,14 @@ public class OrdenesController : ControllerBase
     private readonly IOrdenService _ordenService;
     private readonly ICalificacionService _calificacionService;
     private readonly IAgendaService _agendaService;
+    private readonly IPagoService _pagoService;
 
-    public OrdenesController(IOrdenService ordenService, ICalificacionService calificacionService, IAgendaService agendaService)
+    public OrdenesController(IOrdenService ordenService, ICalificacionService calificacionService, IAgendaService agendaService, IPagoService pagoService)
     {
         _ordenService = ordenService;
         _calificacionService = calificacionService;
         _agendaService = agendaService;
+        _pagoService = pagoService;
     }
 
     private Guid ObtenerUsuarioId()
@@ -119,6 +122,20 @@ public class OrdenesController : ControllerBase
         {
             await _agendaService.ProgramarTurnoAsync(ObtenerUsuarioId(), id, request);
             return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+        [HttpPost("{id}/pagar")]
+    [Authorize(Roles = "Cliente")]
+    public async Task<IActionResult> CrearPreferenciaPago(Guid id)
+    {
+        try
+        {
+            var resultado = await _pagoService.CrearPreferenciaAsync(id, ObtenerUsuarioId());
+            return Ok(resultado);
         }
         catch (InvalidOperationException ex)
         {

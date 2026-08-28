@@ -53,6 +53,7 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ICalificacionService, CalificacionService>();
 builder.Services.AddHttpClient<IStorageService, SupabaseStorageService>();
 builder.Services.AddScoped<IAgendaService, AgendaService>();
+builder.Services.AddScoped<IPagoService, PagoService>();
 builder.Services.AddSignalR();
 
 
