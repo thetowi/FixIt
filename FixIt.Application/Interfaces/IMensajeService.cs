@@ -4,7 +4,7 @@ namespace FixIt.Application.Interfaces;
 
 public interface IMensajeService
 {
-    Task<bool> UsuarioPerteneceALaOrdenAsync(Guid ordenId, Guid usuarioId);
-    Task<List<MensajeResponse>> ListarHistorialAsync(Guid ordenId);
-    Task<MensajeResponse> GuardarMensajeAsync(Guid ordenId, Guid emisorId, string contenido);
+    Task<bool> UsuarioPerteneceALaConversacionAsync(Guid conversacionId, Guid usuarioId);
+    Task<List<MensajeResponse>> ListarHistorialAsync(Guid conversacionId);
+    Task<MensajeResponse> GuardarMensajeTextoAsync(Guid conversacionId, Guid emisorId, string contenido);
 }

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace FixIt.Api.Controllers;
 
 [ApiController]
-[Route("api/ordenes/{ordenId}/mensajes")]
+[Route("api/conversaciones/{conversacionId}/mensajes")]
 [Authorize]
 public class MensajesController : ControllerBase
 {
@@ -18,18 +18,18 @@ public class MensajesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Historial(Guid ordenId)
+    public async Task<IActionResult> Historial(Guid conversacionId)
     {
         var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
         var usuarioId = Guid.Parse(idClaim!);
 
-        var pertenece = await _mensajeService.UsuarioPerteneceALaOrdenAsync(ordenId, usuarioId);
+        var pertenece = await _mensajeService.UsuarioPerteneceALaConversacionAsync(conversacionId, usuarioId);
         if (!pertenece)
         {
             return Forbid();
         }
 
-        var historial = await _mensajeService.ListarHistorialAsync(ordenId);
+        var historial = await _mensajeService.ListarHistorialAsync(conversacionId);
         return Ok(historial);
     }
 }

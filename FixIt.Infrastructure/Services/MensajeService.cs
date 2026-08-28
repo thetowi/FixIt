@@ -15,39 +15,44 @@ public class MensajeService : IMensajeService
         _db = db;
     }
 
-    public async Task<bool> UsuarioPerteneceALaOrdenAsync(Guid ordenId, Guid usuarioId)
+    public async Task<bool> UsuarioPerteneceALaConversacionAsync(Guid conversacionId, Guid usuarioId)
     {
-        return await _db.Ordenes.AnyAsync(o =>
-            o.Id == ordenId && (o.ClienteId == usuarioId || o.PrestadorId == usuarioId));
+        return await _db.Conversaciones.AnyAsync(c =>
+            c.Id == conversacionId && (c.ClienteId == usuarioId || c.PrestadorId == usuarioId));
     }
 
-    public async Task<List<MensajeResponse>> ListarHistorialAsync(Guid ordenId)
+    public async Task<List<MensajeResponse>> ListarHistorialAsync(Guid conversacionId)
     {
         return await _db.Mensajes
-            .Where(m => m.OrdenId == ordenId)
+            .Where(m => m.ConversacionId == conversacionId)
             .Include(m => m.Emisor)
             .OrderBy(m => m.EnviadoEn)
             .Select(m => new MensajeResponse
             {
                 Id = m.Id,
-                OrdenId = m.OrdenId,
+                ConversacionId = m.ConversacionId,
                 EmisorId = m.EmisorId,
                 EmisorNombre = m.Emisor.Nombre,
+                Tipo = m.Tipo.ToString(),
                 Contenido = m.Contenido,
+                ImagenUrl = m.ImagenUrl,
+                MontoOferta = m.MontoOferta,
+                OfertaVigente = m.OfertaVigente,
                 EnviadoEn = m.EnviadoEn
             })
             .ToListAsync();
     }
 
-    public async Task<MensajeResponse> GuardarMensajeAsync(Guid ordenId, Guid emisorId, string contenido)
+    public async Task<MensajeResponse> GuardarMensajeTextoAsync(Guid conversacionId, Guid emisorId, string contenido)
     {
         var emisor = await _db.Usuarios.FindAsync(emisorId);
 
         var mensaje = new Mensaje
         {
             Id = Guid.NewGuid(),
-            OrdenId = ordenId,
+            ConversacionId = conversacionId,
             EmisorId = emisorId,
+            Tipo = TipoMensaje.Texto,
             Contenido = contenido
         };
 
@@ -57,9 +62,10 @@ public class MensajeService : IMensajeService
         return new MensajeResponse
         {
             Id = mensaje.Id,
-            OrdenId = mensaje.OrdenId,
+            ConversacionId = mensaje.ConversacionId,
             EmisorId = mensaje.EmisorId,
             EmisorNombre = emisor!.Nombre,
+            Tipo = mensaje.Tipo.ToString(),
             Contenido = mensaje.Contenido,
             EnviadoEn = mensaje.EnviadoEn
         };

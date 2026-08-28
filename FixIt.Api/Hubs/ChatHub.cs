@@ -22,29 +22,29 @@ public class ChatHub : Hub
         return Guid.Parse(idClaim!);
     }
 
-    public async Task UnirseAOrden(string ordenId)
+    public async Task UnirseAConversacion(string conversacionId)
     {
         var usuarioId = ObtenerUsuarioId();
-        var ordenGuid = Guid.Parse(ordenId);
+        var conversacionGuid = Guid.Parse(conversacionId);
 
-        var pertenece = await _mensajeService.UsuarioPerteneceALaOrdenAsync(ordenGuid, usuarioId);
+        var pertenece = await _mensajeService.UsuarioPerteneceALaConversacionAsync(conversacionGuid, usuarioId);
         if (!pertenece)
         {
-            throw new HubException("No tenés acceso a esta orden.");
+            throw new HubException("No tenés acceso a esta conversación.");
         }
 
-        await Groups.AddToGroupAsync(Context.ConnectionId, ordenId);
+        await Groups.AddToGroupAsync(Context.ConnectionId, conversacionId);
     }
 
-    public async Task EnviarMensaje(string ordenId, string contenido)
+    public async Task EnviarMensaje(string conversacionId, string contenido)
     {
         var usuarioId = ObtenerUsuarioId();
-        var ordenGuid = Guid.Parse(ordenId);
+        var conversacionGuid = Guid.Parse(conversacionId);
 
-        var pertenece = await _mensajeService.UsuarioPerteneceALaOrdenAsync(ordenGuid, usuarioId);
+        var pertenece = await _mensajeService.UsuarioPerteneceALaConversacionAsync(conversacionGuid, usuarioId);
         if (!pertenece)
         {
-            throw new HubException("No tenés acceso a esta orden.");
+            throw new HubException("No tenés acceso a esta conversación.");
         }
 
         if (string.IsNullOrWhiteSpace(contenido))
@@ -52,10 +52,8 @@ public class ChatHub : Hub
             throw new HubException("El mensaje no puede estar vacío.");
         }
 
-        var mensajeGuardado = await _mensajeService.GuardarMensajeAsync(ordenGuid, usuarioId, contenido);
+        var mensajeGuardado = await _mensajeService.GuardarMensajeTextoAsync(conversacionGuid, usuarioId, contenido);
 
-        // Reenvía el mensaje a TODOS los conectados a este grupo (incluido quien lo mandó,
-        // así el frontend no necesita lógica especial para "mostrar mi propio mensaje")
-        await Clients.Group(ordenId).SendAsync("RecibirMensaje", mensajeGuardado);
+        await Clients.Group(conversacionId).SendAsync("RecibirMensaje", mensajeGuardado);
     }
 }

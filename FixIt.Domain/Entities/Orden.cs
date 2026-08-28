@@ -26,6 +26,8 @@ public class Orden
     public EstadoOrden Estado { get; set; } = EstadoOrden.PendientePago;
     public decimal MontoTotal { get; set; }
     public decimal ComisionPlataforma { get; set; }
+    public Guid? ConversacionId { get; set; }
+    public Conversacion? Conversacion { get; set; }
 
     public DateTimeOffset CreadoEn { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? CompletadoEn { get; set; }

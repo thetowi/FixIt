@@ -17,6 +17,7 @@ public class FixItDbContext : DbContext
     public DbSet<Calificacion> Calificaciones => Set<Calificacion>();
     public DbSet<Mensaje> Mensajes => Set<Mensaje>();
     public DbSet<FotoTrabajo> FotosTrabajo => Set<FotoTrabajo>();
+    public DbSet<Conversacion> Conversaciones => Set<Conversacion>();
 
     public DbSet<DisponibilidadPrestador> Disponibilidad => Set<DisponibilidadPrestador>();
 
@@ -81,6 +82,10 @@ public class FixItDbContext : DbContext
                 .WithMany(u => u.OrdenesComoPrestador)
                 .HasForeignKey(o => o.PrestadorId)
                 .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(o => o.Conversacion)
+                .WithMany()
+                .HasForeignKey(o => o.ConversacionId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // ---- Pago ----
@@ -112,13 +117,19 @@ public class FixItDbContext : DbContext
         });
 
         // ---- Mensaje ----
-        modelBuilder.Entity<Mensaje>(entity =>
+                modelBuilder.Entity<Mensaje>(entity =>
         {
-            entity.HasIndex(m => m.OrdenId);
+            entity.HasIndex(m => m.ConversacionId);
 
-            entity.HasOne(m => m.Orden)
-                .WithMany(o => o.Mensajes)
-                .HasForeignKey(m => m.OrdenId)
+            entity.Property(m => m.Tipo)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(m => m.MontoOferta).HasPrecision(10, 2);
+
+            entity.HasOne(m => m.Conversacion)
+                .WithMany(c => c.Mensajes)
+                .HasForeignKey(m => m.ConversacionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(m => m.Emisor)
@@ -143,6 +154,20 @@ public class FixItDbContext : DbContext
                 .WithMany(u => u.Disponibilidad)
                 .HasForeignKey(d => d.PrestadorId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<Conversacion>(entity =>
+        {
+            entity.HasIndex(c => new { c.ClienteId, c.PrestadorId, c.CategoriaId });
+
+            entity.HasOne(c => c.Cliente)
+                .WithMany()
+                .HasForeignKey(c => c.ClienteId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(c => c.Prestador)
+                .WithMany()
+                .HasForeignKey(c => c.PrestadorId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }
