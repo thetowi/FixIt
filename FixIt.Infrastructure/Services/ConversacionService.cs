@@ -1,0 +1,98 @@
+using FixIt.Application.DTOs.Conversaciones;
+using FixIt.Application.Interfaces;
+using FixIt.Domain.Entities;
+using FixIt.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace FixIt.Infrastructure.Services;
+
+public class ConversacionService : IConversacionService
+{
+    private readonly FixItDbContext _db;
+
+    public ConversacionService(FixItDbContext db)
+    {
+        _db = db;
+    }
+
+    public async Task<ConversacionResponse> IniciarOEncontrarAsync(Guid clienteId, IniciarConversacionRequest request)
+    {
+        var prestador = await _db.Usuarios
+            .FirstOrDefaultAsync(u => u.Id == request.PrestadorId && u.Rol == RolUsuario.Prestador);
+        if (prestador is null)
+        {
+            throw new InvalidOperationException("El prestador no existe.");
+        }
+
+        var ofreceCategoria = await _db.PrestadorCategorias
+            .Include(pc => pc.Categoria)
+            .FirstOrDefaultAsync(pc => pc.PrestadorId == request.PrestadorId && pc.CategoriaId == request.CategoriaId);
+        if (ofreceCategoria is null)
+        {
+            throw new InvalidOperationException("Este prestador no ofrece esa categoría.");
+        }
+
+        var cliente = await _db.Usuarios.FindAsync(clienteId);
+
+        // Si ya existe una conversación entre este cliente y prestador para esta categoría, la reutilizamos
+        var existente = await _db.Conversaciones
+            .FirstOrDefaultAsync(c => c.ClienteId == clienteId && c.PrestadorId == request.PrestadorId && c.CategoriaId == request.CategoriaId);
+
+        if (existente is not null)
+        {
+            return new ConversacionResponse
+            {
+                Id = existente.Id,
+                ClienteId = existente.ClienteId,
+                PrestadorId = existente.PrestadorId,
+                PrestadorNombreCompleto = $"{prestador.Nombre} {prestador.Apellido}",
+                ClienteNombreCompleto = $"{cliente!.Nombre} {cliente.Apellido}",
+                CategoriaId = existente.CategoriaId,
+                CategoriaNombre = ofreceCategoria.Categoria.Nombre
+            };
+        }
+
+        var conversacion = new Conversacion
+        {
+            Id = Guid.NewGuid(),
+            ClienteId = clienteId,
+            PrestadorId = request.PrestadorId,
+            CategoriaId = request.CategoriaId
+        };
+
+        _db.Conversaciones.Add(conversacion);
+        await _db.SaveChangesAsync();
+
+        return new ConversacionResponse
+        {
+            Id = conversacion.Id,
+            ClienteId = conversacion.ClienteId,
+            PrestadorId = conversacion.PrestadorId,
+            PrestadorNombreCompleto = $"{prestador.Nombre} {prestador.Apellido}",
+            ClienteNombreCompleto = $"{cliente!.Nombre} {cliente.Apellido}",
+            CategoriaId = conversacion.CategoriaId,
+            CategoriaNombre = ofreceCategoria.Categoria.Nombre
+        };
+    }
+
+    public async Task<List<ConversacionResponse>> ListarMisConversacionesAsync(Guid usuarioId)
+    {
+        return await _db.Conversaciones
+            .Where(c => c.ClienteId == usuarioId || c.PrestadorId == usuarioId)
+            .Include(c => c.Cliente)
+            .Include(c => c.Prestador)
+            .Include(c => c.Categoria)
+            .OrderByDescending(c => c.CreadoEn)
+            .Select(c => new ConversacionResponse
+            {
+                Id = c.Id,
+                ClienteId = c.ClienteId,
+                PrestadorId = c.PrestadorId,
+                PrestadorNombreCompleto = c.Prestador.Nombre + " " + c.Prestador.Apellido,
+                ClienteNombreCompleto = c.Cliente.Nombre + " " + c.Cliente.Apellido,
+                CategoriaId = c.CategoriaId,
+                CategoriaNombre = c.Categoria.Nombre
+            })
+            .ToListAsync();
+    }
+}

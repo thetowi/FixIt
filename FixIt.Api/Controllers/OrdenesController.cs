@@ -128,18 +128,5 @@ public class OrdenesController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
-        [HttpPost("{id}/pagar")]
-    [Authorize(Roles = "Cliente")]
-    public async Task<IActionResult> CrearPreferenciaPago(Guid id)
-    {
-        try
-        {
-            var resultado = await _pagoService.CrearPreferenciaAsync(id, ObtenerUsuarioId());
-            return Ok(resultado);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-    }
+    
 }

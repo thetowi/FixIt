@@ -4,6 +4,6 @@ namespace FixIt.Application.Interfaces;
 
 public interface IPagoService
 {
-    Task<CrearPreferenciaResponse> CrearPreferenciaAsync(Guid ordenId, Guid clienteId);
+    Task<CrearPreferenciaResponse> CrearPreferenciaDesdeOfertaAsync(Guid mensajeOfertaId, Guid clienteId);
     Task ProcesarWebhookAsync(string paymentId);
 }

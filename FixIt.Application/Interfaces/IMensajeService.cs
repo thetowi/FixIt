@@ -7,4 +7,5 @@ public interface IMensajeService
     Task<bool> UsuarioPerteneceALaConversacionAsync(Guid conversacionId, Guid usuarioId);
     Task<List<MensajeResponse>> ListarHistorialAsync(Guid conversacionId);
     Task<MensajeResponse> GuardarMensajeTextoAsync(Guid conversacionId, Guid emisorId, string contenido);
+        Task<MensajeResponse> EnviarOfertaAsync(Guid conversacionId, Guid prestadorId, decimal monto);
 }

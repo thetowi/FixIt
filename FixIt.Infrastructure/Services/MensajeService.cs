@@ -70,4 +70,56 @@ public class MensajeService : IMensajeService
             EnviadoEn = mensaje.EnviadoEn
         };
     }
+
+        public async Task<MensajeResponse> EnviarOfertaAsync(Guid conversacionId, Guid prestadorId, decimal monto)
+    {
+        if (monto <= 0)
+        {
+            throw new InvalidOperationException("El monto debe ser mayor a cero.");
+        }
+
+        var conversacion = await _db.Conversaciones
+            .FirstOrDefaultAsync(c => c.Id == conversacionId && c.PrestadorId == prestadorId);
+        if (conversacion is null)
+        {
+            throw new InvalidOperationException("Conversación no encontrada.");
+        }
+
+        // Las ofertas anteriores de esta conversación dejan de estar vigentes:
+        // solo la última oferta puede pagarse
+        var ofertasAnteriores = await _db.Mensajes
+            .Where(m => m.ConversacionId == conversacionId && m.Tipo == TipoMensaje.Oferta && m.OfertaVigente)
+            .ToListAsync();
+        foreach (var anterior in ofertasAnteriores)
+        {
+            anterior.OfertaVigente = false;
+        }
+
+        var emisor = await _db.Usuarios.FindAsync(prestadorId);
+
+        var mensaje = new Mensaje
+        {
+            Id = Guid.NewGuid(),
+            ConversacionId = conversacionId,
+            EmisorId = prestadorId,
+            Tipo = TipoMensaje.Oferta,
+            MontoOferta = monto,
+            OfertaVigente = true
+        };
+
+        _db.Mensajes.Add(mensaje);
+        await _db.SaveChangesAsync();
+
+        return new MensajeResponse
+        {
+            Id = mensaje.Id,
+            ConversacionId = mensaje.ConversacionId,
+            EmisorId = mensaje.EmisorId,
+            EmisorNombre = emisor!.Nombre,
+            Tipo = mensaje.Tipo.ToString(),
+            MontoOferta = mensaje.MontoOferta,
+            OfertaVigente = mensaje.OfertaVigente,
+            EnviadoEn = mensaje.EnviadoEn
+        };
+    }
 }

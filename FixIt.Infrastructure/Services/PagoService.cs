@@ -7,6 +7,7 @@ using MercadoPago.Client.Preference;
 using MercadoPago.Config;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using FixIt.Domain.Entities;
 
 namespace FixIt.Infrastructure.Services;
 
@@ -25,20 +26,52 @@ public class PagoService : IPagoService
         MercadoPagoConfig.AccessToken = _config["MercadoPago:AccessToken"];
     }
 
-    public async Task<CrearPreferenciaResponse> CrearPreferenciaAsync(Guid ordenId, Guid clienteId)
+        public async Task<CrearPreferenciaResponse> CrearPreferenciaDesdeOfertaAsync(Guid mensajeOfertaId, Guid clienteId)
     {
-        var orden = await _db.Ordenes
-            .Include(o => o.Categoria)
-            .FirstOrDefaultAsync(o => o.Id == ordenId);
+        var oferta = await _db.Mensajes
+            .Include(m => m.Conversacion)
+                .ThenInclude(c => c.Categoria)
+            .FirstOrDefaultAsync(m => m.Id == mensajeOfertaId && m.Tipo == TipoMensaje.Oferta);
 
-        if (orden is null || orden.ClienteId != clienteId)
+        if (oferta is null || oferta.Conversacion.ClienteId != clienteId)
         {
-            throw new InvalidOperationException("Orden no encontrada.");
+            throw new InvalidOperationException("Oferta no encontrada.");
         }
 
-        if (orden.Estado != EstadoOrden.PendientePago)
+        if (!oferta.OfertaVigente)
         {
-            throw new InvalidOperationException("Esta orden ya no está pendiente de pago.");
+            throw new InvalidOperationException("Esta oferta ya no está vigente. Pedile al prestador una oferta nueva.");
+        }
+
+        // Si ya existe una Orden para esta oferta (por ejemplo, el cliente volvió a intentar pagar
+        // tras un pago fallido), la reutilizamos en vez de crear una duplicada
+        var ordenExistente = await _db.Ordenes
+            .FirstOrDefaultAsync(o => o.ConversacionId == oferta.ConversacionId && o.Estado == EstadoOrden.PendientePago);
+
+        Orden orden;
+        if (ordenExistente is not null)
+        {
+            orden = ordenExistente;
+        }
+        else
+        {
+            var porcentajeComision = _config.GetValue<decimal>("Comision:PorcentajeDefault");
+            var comision = Math.Round(oferta.MontoOferta!.Value * porcentajeComision, 2);
+
+            orden = new Orden
+            {
+                Id = Guid.NewGuid(),
+                ClienteId = clienteId,
+                PrestadorId = oferta.Conversacion.PrestadorId,
+                CategoriaId = oferta.Conversacion.CategoriaId,
+                ConversacionId = oferta.ConversacionId,
+                Estado = EstadoOrden.PendientePago,
+                MontoTotal = oferta.MontoOferta.Value,
+                ComisionPlataforma = comision
+            };
+
+            _db.Ordenes.Add(orden);
+            await _db.SaveChangesAsync();
         }
 
         var request = new PreferenceRequest
@@ -47,16 +80,14 @@ public class PagoService : IPagoService
             {
                 new PreferenceItemRequest
                 {
-                    Title = $"FixIt - {orden.Categoria.Nombre}",
+                    Title = $"FixIt - {oferta.Conversacion.Categoria.Nombre}",
                     Quantity = 1,
                     CurrencyId = "ARS",
                     UnitPrice = orden.MontoTotal
                 }
             },
-            // external_reference es CLAVE: es lo que nos permite, cuando llegue el webhook,
-            // saber a qué Orden nuestra corresponde ese pago
             ExternalReference = orden.Id.ToString(),
-                        NotificationUrl = EsUrlValida(_config["MercadoPago:WebhookUrl"]) ? _config["MercadoPago:WebhookUrl"] : null,
+            NotificationUrl = EsUrlValida(_config["MercadoPago:WebhookUrl"]) ? _config["MercadoPago:WebhookUrl"] : null,
             BackUrls = new PreferenceBackUrlsRequest
             {
                 Success = $"{_config["Frontend:Url"]}/ordenes?pago=exitoso",
