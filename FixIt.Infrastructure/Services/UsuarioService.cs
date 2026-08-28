@@ -94,6 +94,17 @@ public class UsuarioService : IUsuarioService
 
         return MapearAPerfilPropio(usuario);
     }
+    public async Task MarcarTutorialVistoAsync(Guid usuarioId)
+    {
+        var usuario = await _db.Usuarios.FindAsync(usuarioId);
+        if (usuario is null)
+        {
+            throw new InvalidOperationException("Usuario no encontrado.");
+        }
+
+        usuario.TutorialVisto = true;
+        await _db.SaveChangesAsync();
+    }
 
     private static PerfilPropioResponse MapearAPerfilPropio(Usuario usuario)
     {

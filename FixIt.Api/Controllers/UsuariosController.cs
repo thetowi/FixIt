@@ -91,4 +91,10 @@ public class UsuariosController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+    [HttpPut("tutorial-visto")]
+    public async Task<IActionResult> MarcarTutorialVisto()
+    {
+        await _usuarioService.MarcarTutorialVistoAsync(ObtenerUsuarioId());
+        return NoContent();
+    }
 }

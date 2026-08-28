@@ -21,6 +21,7 @@ public class Usuario
 
     public string? DniNumero { get; set; }
     public string? DniFotoUrl { get; set; }
+    public bool TutorialVisto { get; set; } = false;
     public bool Verificado { get; set; } = false;
 
     public double? Latitud { get; set; }

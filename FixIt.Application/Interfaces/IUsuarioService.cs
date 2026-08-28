@@ -8,4 +8,5 @@ public interface IUsuarioService
     Task<string> ActualizarFotoPerfilAsync(Guid usuarioId, Stream archivo, string contentType);
     Task<PerfilPropioResponse> ObtenerPerfilPropioAsync(Guid usuarioId);
     Task<PerfilPropioResponse> ActualizarPerfilAsync(Guid usuarioId, ActualizarPerfilRequest request);
+    Task MarcarTutorialVistoAsync(Guid usuarioId);
 }
